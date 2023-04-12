@@ -74,20 +74,20 @@ systemctl start kubelet
 echo "Step 11: Now it's time to initialize our Cluster!((Only on master node))"
 echo "(Only on master node)"
 kubeadm init --kubernetes-version=${KUBE_VERSION}
-echo "(To regenrate the tokens)"
-kubeadm token create --print-join-command
+#echo "(To regenrate the tokens)"
+#kubeadm token create --print-join-command
 
-echo "Step 12:(Only on master node)"
-cp /etc/kubernetes/admin.conf /root/
-chown $(id -u):$(id -g) /root/admin.conf
-export KUBECONFIG=/root/admin.conf
-echo 'export KUBECONFIG=/root/admin.conf' >> /root/.bashrc
+#echo "Step 12:(Only on master node)"
+#cp /etc/kubernetes/admin.conf /root/
+#chown $(id -u):$(id -g) /root/admin.conf
+#export KUBECONFIG=/root/admin.conf
+#echo 'export KUBECONFIG=/root/admin.conf' >> /root/.bashrc
 
-echo "Step 13: Download the daemonset yaml file of required version like following link:"
-wget https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+#echo "Step 13: Download the daemonset yaml file of required version like following link:"
+#wget https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
 
-echo "Step 14: Now apply the daemonset yaml!"
-kubectl apply -f weave-daemonset-k8s.yaml
+#echo "Step 14: Now apply the daemonset yaml!"
+#kubectl apply -f weave-daemonset-k8s.yaml
 
 
 #kubeadm join 172.31.6.21:6443 --token 93wsj9.bhkcuyvbgnkc3vyp --discovery-token-ca-cert-hash sha256:431345fd720f6540d1fa0f6099f0f7fbf4f75a683e3f90819ae915c20a60e51e

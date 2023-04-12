@@ -10,7 +10,16 @@
 
 ![Project 4](https://user-images.githubusercontent.com/129657174/231373516-b2456083-d04a-49d9-8470-b08819204c53.png)
 
+### What is Kubeadm?
+
+Kubeadm is a tool built to provide kubeadm init and kubeadm join as best-practice "fast paths" for creating Kubernetes clusters.
+
+kubeadm performs the actions necessary to get a minimum viable cluster up and running. By design, it cares only about bootstrapping, not about provisioning machines. Likewise, installing various nice-to-have addons, like the Kubernetes Dashboard, monitoring solutions, and cloud-specific addons, is not in scope.
+
+Instead, we expect higher-level and more tailored tooling to be built on top of kubeadm, and ideally, using kubeadm as the basis of all deployments will make it easier to create conformant clusters.
+
 ### Creating Kubernetes cluster using Kubeadm
+
 -	Go to AWS Management Console 
 -	EC2 -> Launch Instance
 -	Launch two EC2 instances with Ubuntu image and t2.medium instance type, one is for master and other for  worker node
@@ -94,7 +103,7 @@ sudo docker run hello-world
 
 This command downloads a test image and runs it in a container. When the container runs, it prints a confirmation message and exits.
 
-#### Installing kubeadm, kubelet and kubectl
+### Installing kubeadm, kubelet and kubectl
 
    1. Update the apt package index and install packages needed to use the Kubernetes apt repository:
 
@@ -122,8 +131,17 @@ sudo apt-get update
 sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 ```
+```shell
+sudo swapoff -a
+```
+or
+```vim /etc/fstab``` comment the /swap.img
 
-#### Creating a cluster with kubeadm
+###Note: If we are getting Container runtime is not running error
+```shell
+sudo rm /etc/containerd/config.toml
+sudo systemctl restart containerd
+```
 
 To initialize the control-plane node run:
 
@@ -132,7 +150,7 @@ kubeadm init <args>
 ```
 ```kubeadm init``` first runs a series of prechecks to ensure that the machine is ready to run Kubernetes. These prechecks expose warnings and exit on errors. kubeadm init then downloads and installs the cluster control plane components. This may take several minutes. After it finishes you should see:
 
-```shell
+```
 Your Kubernetes control-plane has initialized successfully!
 
 To start using your cluster, you need to run the following as a regular user:
@@ -140,6 +158,10 @@ To start using your cluster, you need to run the following as a regular user:
   mkdir -p $HOME/.kube
   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  
+Alternatively, if you are the root user, you can run:
+
+   export KUBECONFIG=/etc/kubernetes/admin.conf
 
 You should now deploy a Pod network to the cluster.
 Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
@@ -151,55 +173,16 @@ as root:
   kubeadm join <control-plane-host>:<control-plane-port> --token <token> --discovery-token-ca-cert-hash sha256:<hash>
 ```
 
-To make kubectl work for your non-root user, run these commands, which are also part of the kubeadm init output:
-
 ```shell
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-```
-
-Alternatively, if you are the root user, you can run:
-
-```shell
-export KUBECONFIG=/etc/kubernetes/admin.conf
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+kubectl get nodes
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+#once the kube-flannel pods are up then the nodes will be ready
+kubectl get nodes
 ```
 
 
 
-### What is Kubeadm?
-
-Kubeadm is a tool built to provide kubeadm init and kubeadm join as best-practice "fast paths" for creating Kubernetes clusters.
-
-kubeadm performs the actions necessary to get a minimum viable cluster up and running. By design, it cares only about bootstrapping, not about provisioning machines. Likewise, installing various nice-to-have addons, like the Kubernetes Dashboard, monitoring solutions, and cloud-specific addons, is not in scope.
-
-Instead, we expect higher-level and more tailored tooling to be built on top of kubeadm, and ideally, using kubeadm as the basis of all deployments will make it easier to create conformant clusters.
-
-#### Installing kubeadm and neccesary packages on master and worker nodes. For reference check the kubeadm_master_install.sh and kubeadm_node_install.sh shell scripts.
-
-Now connect to master node
-
-```shell
-   sudo -i
-   sudo apt update -y
-   sudo apt install git -y #By default git is installed on Ubuntu 22.04
-   git clone https://github.com/iamsaikishore/Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster.git
-   cd Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster
-   chmod 777 kubeadm_master_install.sh kubeadm_node_install.sh
-   sh kubeadm_master_install.sh
-```
-
-![Screenshot (235)](https://user-images.githubusercontent.com/129657174/231403341-a0139f89-a46c-45a8-bf8f-5626e1b7bda4.png)
-
-Now connect to worker node
-
-```shell
-   sudo -i
-   git clone https://github.com/iamsaikishore/Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster.git
-   cd Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster
-   chmod 777 kubeadm_master_install.sh kubeadm_node_install.sh
-   sh kubeadm_node_install.sh
-```
    
 Now copy the join token from the master node and execute in the worker node
 

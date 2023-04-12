@@ -303,6 +303,8 @@ Access the phpMyAdmin UI using master node public ip and node port
 
 Import the sql data
 
+Download the simple_todo.sql file to your local system and import it to the phpMyAdmin
+
 ### What is PHP?
 
 PHP is a server-side scripting language designed for web development, but which can also be used as a general-purpose programming language. PHP can be added to straight HTML or it can be used with a variety of templating engines and web frameworks. PHP code is usually processed by an interpreter, which is either implemented as a native module on the web-server or as a common gateway interface (CGI). 
@@ -312,16 +314,35 @@ In the index.html change the localhost to mysql clusterip and root user, passwor
 
 Build the docker file
 
-Push the image
+```shell
+docker build -t iamsaikishore/phptodoapp:v1 .
+```
+
+Push the image to docker hub
+
+Create a Docker Hub Account
+
+```shell
+docker login
+```
+
+Give the docker hub username and password
+
+```shell
+docker push iamsaikishore/phptodoapp:v1
+```
+
+Now create the PHP Pod and expose it using NodePort service
  
 ```shell
-   kubectl run php-app --image=iamsaikishore/phptodoapp
+   kubectl run php-app --image=iamsaikishore/phptodoapp:v1
    kubectl expose pod php-app --type=NodePort --port=8088 --target-port=80 --name=phpapp-svc
+   kubectl get all
 ```
 
 To access the application public ip of master and node port
 
-Do some tasks
+Now try to add, update, delete and mark complete the tasks and play around
 
 
 

@@ -17,6 +17,156 @@
 
 ![Screenshot (233)](https://user-images.githubusercontent.com/129657174/231374363-399413a3-f95c-41e3-a4fd-c19efaa8b0f4.png)
 
+### Installing Docker
+
+#### Uninstall old versions
+
+Older versions of Docker went by the names of docker, docker.io, or docker-engine, you might also have installations of containerd or runc. Uninstall any such older versions before attempting to install a new version:
+
+```shell
+sudo apt-get remove docker docker-engine docker.io containerd runc
+```
+```apt-get``` might report that you have none of these packages installed.
+
+#### Install using the apt repository
+
+Before you install Docker Engine for the first time on a new host machine, you need to set up the Docker repository. Afterward, you can install and update Docker from the repository.
+
+**Set up the repository**
+
+   1. Update the ```apt``` package index and install packages to allow ```apt``` to use a repository over HTTPS:
+
+```shell
+sudo apt-get update
+
+sudo apt-get install \
+  ca-certificates \
+  curl \
+  gnupg
+```
+
+   2. Add Docker’s official GPG key:
+
+```shell
+sudo mkdir -m 0755 -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+```
+
+   3. Use the following command to set up the repository:
+
+```shell
+echo \
+"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+"$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+
+#### Install Docker Engine
+
+   1. Update the apt package index:
+
+```shell
+sudo apt-get update
+```
+
+   Receiving a GPG error when running apt-get update?
+
+   Your default umask may be incorrectly configured, preventing detection of the repository public key file. Try granting read permission for the Docker public key file before updating the package index:
+
+```shell
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+sudo apt-get update
+```
+
+   2. Install Docker Engine, containerd, and Docker Compose.
+
+To install the latest version, run:
+
+```shell
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+```
+
+   3. Verify that the Docker Engine installation is successful by running the hello-world image:
+
+```shell
+sudo docker run hello-world
+```
+
+This command downloads a test image and runs it in a container. When the container runs, it prints a confirmation message and exits.
+
+#### Installing kubeadm, kubelet and kubectl
+
+   1. Update the apt package index and install packages needed to use the Kubernetes apt repository:
+
+```shell
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl
+```
+
+   2. Download the Google Cloud public signing key:
+
+```shell
+sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+```
+
+   3. Add the Kubernetes apt repository:
+
+```shell
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+```
+
+   4. Update apt package index, install kubelet, kubeadm and kubectl, and pin their version:
+
+```shell
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+```
+
+#### Creating a cluster with kubeadm
+
+To initialize the control-plane node run:
+
+```shell
+kubeadm init <args>
+```
+```kubeadm init``` first runs a series of prechecks to ensure that the machine is ready to run Kubernetes. These prechecks expose warnings and exit on errors. kubeadm init then downloads and installs the cluster control plane components. This may take several minutes. After it finishes you should see:
+
+```shell
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a Pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  /docs/concepts/cluster-administration/addons/
+
+You can now join any number of machines by running the following on each node
+as root:
+
+  kubeadm join <control-plane-host>:<control-plane-port> --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+```
+
+To make kubectl work for your non-root user, run these commands, which are also part of the kubeadm init output:
+
+```shell
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+Alternatively, if you are the root user, you can run:
+
+```shell
+export KUBECONFIG=/etc/kubernetes/admin.conf
+```
+
+
+
 ### What is Kubeadm?
 
 Kubeadm is a tool built to provide kubeadm init and kubeadm join as best-practice "fast paths" for creating Kubernetes clusters.
@@ -30,31 +180,36 @@ Instead, we expect higher-level and more tailored tooling to be built on top of 
 Now connect to master node
 
 ```shell
+   sudo -i
    sudo apt update -y
    sudo apt install git -y #By default git is installed on Ubuntu 22.04
    git clone https://github.com/iamsaikishore/Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster.git
    cd Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster
-   ./kubeadm_master_install.sh
+   chmod 777 kubeadm_master_install.sh kubeadm_node_install.sh
+   sh kubeadm_master_install.sh
 ```
+
+![Screenshot (235)](https://user-images.githubusercontent.com/129657174/231403341-a0139f89-a46c-45a8-bf8f-5626e1b7bda4.png)
 
 Now connect to worker node
 
 ```shell
-   sudo apt install git -y
+   sudo -i
    git clone https://github.com/iamsaikishore/Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster.git
    cd Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster
-   ./kubeadm_node_install.sh
+   chmod 777 kubeadm_master_install.sh kubeadm_node_install.sh
+   sh kubeadm_node_install.sh
+```
+   
+Now copy the join token from the master node and execute in the worker node
+
+Example:
+```shell
+   kubeadm join 172.31.43.2:6443 --token wl3td9.0ragjxhjwz1deo5t \
+           --discovery-token-ca-cert-hash sha256:c9eaf691a2700c7880b33b9ca8f0b4992a4458205906993947a146f750919492
 ```
 
-Now in the master node execute the below command
-
-```kubeadm init --kubernetes-version=${KUBE_VERSION}```
-   
-Now copy the token and execute in the worker node
-
-
-
-
+Now the Kubernetes cluster is ready
 
 ### What is MySQL?
 
@@ -69,14 +224,14 @@ For more information and related downloads for MySQL Server and other MySQL prod
 Now will create a mysql pod, we require some neccesary configurations for that we create configmap for database name and secret for username and passsword
 
 ```shell
-   kubectl create cm db-config –from-literal=MYSQL_DATABASE=sqldb
-   kubectl create secret generic db-secret –from-literal=MYSQL_ROOT_PASSWORD=rootpassword
+   kubectl create cm db-config --from-literal=MYSQL_DATABASE=sqldb
+   kubectl create secret generic db-secret --from-literal=MYSQL_ROOT_PASSWORD=rootpassword
 ```
 
 Now lets generate a yaml file to create a mysql pod
 
 ```shell
-   kubectl run mysql-pod –image=mysql –dry-run=client -o yaml > mysql-pod.yml
+   kubectl run mysql-pod --image=mysql --dry-run=client -o yaml > mysql-pod.yml
 ```
 
 Now we have to bind the configmap and secret to mysql pod
@@ -97,7 +252,7 @@ Now we have to bind the configmap and secret to mysql pod
 Now lets expose the pod using clusterIP service, so that we can connect it to phpMyAdmin
 
 ```shell
-   kubectl expose pod mysql-pod –port=3306 –target-port=3306 –name=mysql-svc
+   kubectl expose pod mysql-pod --port=3306 --target-port=3306 --name=mysql-svc
 ```
 
 ### What is phpMyAdmin?
@@ -114,13 +269,13 @@ Now lets create a phpMyAdmin pod, so that we can manage the MySQL Database.
 
 ```shell
    kubectl get svc
-   kubectl create cm phpadmin-config –from-literal=PMA_HOST=<clusterip_of_mysql> --from-literal=PMA_PORT=<mysql_port>
-   kubectl create secret generic phpadmin-secret –from-literal=PMA_USER=root –from-literal=PMA_PASSWORD=rootpassword
+   kubectl create cm phpadmin-config --from-literal=PMA_HOST=<clusterip_of_mysql> --from-literal=PMA_PORT=<mysql_port>
+   kubectl create secret generic phpadmin-secret --from-literal=PMA_USER=root --from-literal=PMA_PASSWORD=rootpassword
 ```
 Now lets generate a yaml file to create a phpMyAdmin pod
 
 ```shell
-   kubectl run phpadmin-pod  --image=phpmyadmin –dry-run=client -o yaml > phpadmin-pod.yml
+   kubectl run phpadmin-pod  --image=phpmyadmin --dry-run=client -o yaml > phpadmin-pod.yml
 ```
 
 Now we have to bind the configmap and secret to phpMyAdmin pod
@@ -140,7 +295,7 @@ Now we have to bind the configmap and secret to phpMyAdmin pod
 Now lets expose the pod using NodePort service, so that we can access phpMyAdmin for managing MySQL Database
 
 ```shell
-   kubectl expose pod phpadmin-pod –type=NodePort –port=8099 –target-port=80 –name=phpadmin-svc
+   kubectl expose pod phpadmin-pod --type=NodePort --port=8099 --target-port=80 --name=phpadmin-svc
    kubectl get all
 ```
 
@@ -160,8 +315,8 @@ Build the docker file
 Push the image
  
 ```shell
-   kubectl run php-app –image=iamsaikishore/phptodoapp
-   kubectl expose pod php-app –type=NodePort –port=8088 –target-port=80 –name=phpapp-svc
+   kubectl run php-app --image=iamsaikishore/phptodoapp
+   kubectl expose pod php-app --type=NodePort --port=8088 --target-port=80 --name=phpapp-svc
 ```
 
 To access the application public ip of master and node port

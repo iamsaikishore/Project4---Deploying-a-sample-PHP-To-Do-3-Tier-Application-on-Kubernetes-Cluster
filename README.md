@@ -1,6 +1,6 @@
 # Deploying a sample PHP To-Do 3 Tier Application on Kubernetes Cluster
 
-#### In this project we are going to deploy a sample php to-do application to Kubernetes cluster and the architecture is going to 3 tier where we are using MySql as Database and phpMyAdmin as Database Management and php for developing the application.
+#### In this project we are going to deploy a sample php to-do application to Kubernetes cluster and the architecture is going to 3 tier where we are using MySql as Database and phpMyAdmin for Database Management and php for developing the application.
 
 ![Screenshot (231)](https://user-images.githubusercontent.com/129657174/231373502-48477aec-088b-4a06-a76a-a3dcca55f195.png)
 

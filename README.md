@@ -22,7 +22,7 @@ Instead, we expect higher-level and more tailored tooling to be built on top of 
 
 -	Go to AWS Management Console 
 -	EC2 -> Launch Instance
--	Launch two EC2 instances with Ubuntu image and t2.medium instance type, one is for master and other for  worker node
+-	Launch two EC2 instances with Ubuntu image and t2.medium instance type, one is for master and other for worker node
 
 ![Screenshot (233)](https://user-images.githubusercontent.com/129657174/231374363-399413a3-f95c-41e3-a4fd-c19efaa8b0f4.png)
 
@@ -47,7 +47,6 @@ Before you install Docker Engine for the first time on a new host machine, you n
 
 ```shell
 sudo apt-get update
-
 sudo apt-get install \
   ca-certificates \
   curl \
@@ -134,7 +133,6 @@ sudo apt-mark hold kubelet kubeadm kubectl
 ```shell
 sudo swapoff -a
 ```
-or
 ```vim /etc/fstab``` comment the /swap.img
 
 ###Note: If we are getting Container runtime is not running error
@@ -142,6 +140,9 @@ or
 sudo rm /etc/containerd/config.toml
 sudo systemctl restart containerd
 ```
+```sudo reboot now```
+
+Install all the required tools on both master and workers nodes, follow the above mentioned procedure.
 
 To initialize the control-plane node run:
 
@@ -173,6 +174,8 @@ as root:
   kubeadm join <control-plane-host>:<control-plane-port> --token <token> --discovery-token-ca-cert-hash sha256:<hash>
 ```
 
+execute this on the master node
+
 ```shell
 sudo kubeadm init --pod-network-cidr=10.244.0.0/16
 kubectl get nodes
@@ -181,9 +184,8 @@ kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/
 kubectl get nodes
 ```
 
+![Screenshot (237)](https://user-images.githubusercontent.com/129657174/231689289-805473c7-8930-4357-adb3-0253ed3c2000.png)
 
-
-   
 Now copy the join token from the master node and execute in the worker node
 
 Example:
@@ -192,7 +194,13 @@ Example:
            --discovery-token-ca-cert-hash sha256:c9eaf691a2700c7880b33b9ca8f0b4992a4458205906993947a146f750919492
 ```
 
+![Screenshot (238)](https://user-images.githubusercontent.com/129657174/231689389-7854b68e-867f-406d-9dbe-046f8813d778.png)
+
+In master node
+```kubectl get nodes```
+
 Now the Kubernetes cluster is ready
+
 
 ### What is MySQL?
 
@@ -207,35 +215,55 @@ For more information and related downloads for MySQL Server and other MySQL prod
 Now will create a mysql pod, we require some neccesary configurations for that we create configmap for database name and secret for username and passsword
 
 ```shell
-   kubectl create cm db-config --from-literal=MYSQL_DATABASE=sqldb
-   kubectl create secret generic db-secret --from-literal=MYSQL_ROOT_PASSWORD=rootpassword
+kubectl create cm db-config --from-literal=MYSQL_DATABASE=sqldb
+kubectl create secret generic db-secret --from-literal=MYSQL_ROOT_PASSWORD=rootpassword
 ```
 
 Now lets generate a yaml file to create a mysql pod
 
 ```shell
-   kubectl run mysql-pod --image=mysql --dry-run=client -o yaml > mysql-pod.yml
+kubectl run mysql-pod --image=mysql --dry-run=client -o yaml > mysql-pod.yml
 ```
 
 Now we have to bind the configmap and secret to mysql pod
 
 ```shell
-   vim mysql-pod.yml
+vim mysql-pod.yml
 ```
 
 ```shell
-
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: mysql-pod
+  name: mysql-pod
+spec:
+  containers:
+  - image: mysql
+    name: mysql-pod
+    envFrom:
+    - configMapRef:
+       name: db-config
+    - secretRef:
+       name: db-secret
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
 ```
 
+![Screenshot (239)](https://user-images.githubusercontent.com/129657174/231692423-e66e031e-6cf6-432a-b8f5-11f97ad7adfb.png)
 
 ```shell
-   kubectl apply -f mysql-pod.yml
+kubectl apply -f mysql-pod.yml
 ```
 
 Now lets expose the pod using clusterIP service, so that we can connect it to phpMyAdmin
 
 ```shell
-   kubectl expose pod mysql-pod --port=3306 --target-port=3306 --name=mysql-svc
+kubectl expose pod mysql-pod --port=3306 --target-port=3306 --name=mysql-svc
 ```
 
 ### What is phpMyAdmin?
@@ -251,55 +279,96 @@ phpMyAdmin is a free software tool written in [PHP](https://www.php.net/), inten
 Now lets create a phpMyAdmin pod, so that we can manage the MySQL Database.
 
 ```shell
-   kubectl get svc
-   kubectl create cm phpadmin-config --from-literal=PMA_HOST=<clusterip_of_mysql> --from-literal=PMA_PORT=<mysql_port>
-   kubectl create secret generic phpadmin-secret --from-literal=PMA_USER=root --from-literal=PMA_PASSWORD=rootpassword
+kubectl get svc
+kubectl create cm phpadmin-config --from-literal=PMA_HOST=<clusterip_of_mysql> --from-literal=PMA_PORT=<mysql_port>
+kubectl create secret generic phpadmin-secret --from-literal=PMA_USER=root --from-literal=PMA_PASSWORD=rootpassword
 ```
 Now lets generate a yaml file to create a phpMyAdmin pod
 
 ```shell
-   kubectl run phpadmin-pod  --image=phpmyadmin --dry-run=client -o yaml > phpadmin-pod.yml
+kubectl run phpadmin-pod  --image=phpmyadmin --dry-run=client -o yaml > phpadmin-pod.yml
 ```
 
 Now we have to bind the configmap and secret to phpMyAdmin pod
 
 ```shell
-   vim phpadmin-pod.yml
+vim phpadmin-pod.yml
 ```
 
 ```shell
-
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: phpadmin-pod
+  name: phpadmin-pod
+spec:
+  containers:
+  - image: phpmyadmin
+    name: phpadmin-pod
+    envFrom:
+    - configMapRef:
+       name: phpadmin-config
+    - secretRef:
+       name: phpadmin-secret
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
 ```
 
+![Screenshot (242)](https://user-images.githubusercontent.com/129657174/231692511-6487ccca-c571-4f70-91db-bcb0273f5d6e.png)
+
 ```shell
-   kubectl apply -f phpadmin-pod.yml
+kubectl apply -f phpadmin-pod.yml
 ```
 
 Now lets expose the pod using NodePort service, so that we can access phpMyAdmin for managing MySQL Database
 
 ```shell
-   kubectl expose pod phpadmin-pod --type=NodePort --port=8099 --target-port=80 --name=phpadmin-svc
-   kubectl get all
+kubectl expose pod phpadmin-pod --type=NodePort --port=8099 --target-port=80 --name=phpadmin-svc
+kubectl get all
 ```
+![Screenshot (243)](https://user-images.githubusercontent.com/129657174/231692613-c55ff8c6-03bf-418a-a1ff-a34ddcaf7511.png)
 
-Access the phpMyAdmin UI using master node public ip and node port
-
-Import the sql data
+Access the phpMyAdmin UI using master node public ip and node port of phpadmin-svc
 
 Download the simple_todo.sql file to your local system and import it to the phpMyAdmin
+
+Select the sqldb database -> Import -> Browse -> select the simple_todo.sql file -> Import
+![Screenshot (246)](https://user-images.githubusercontent.com/129657174/231692787-29c138fe-0690-419b-a53f-990a56b0ac06.png)
+![Screenshot (247)](https://user-images.githubusercontent.com/129657174/231692808-41590396-4ea0-4164-b8c6-d05e56148f58.png)
+![Screenshot (249)](https://user-images.githubusercontent.com/129657174/231692826-102248a8-7bb1-4cb3-9380-d2b1f0c8eabd.png)
 
 ### What is PHP?
 
 PHP is a server-side scripting language designed for web development, but which can also be used as a general-purpose programming language. PHP can be added to straight HTML or it can be used with a variety of templating engines and web frameworks. PHP code is usually processed by an interpreter, which is either implemented as a native module on the web-server or as a common gateway interface (CGI). 
 [wikipedia.org/wiki/PHP](https://en.wikipedia.org/wiki/PHP)
 
-In the index.html change the localhost to mysql clusterip and root user, password,mysql database name
+```
+git clone https://github.com/iamsaikishore/Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster.git
+cd Project4---Deploying-a-sample-PHP-To-Do-3-Tier-Application-on-Kubernetes-Cluster
+```
+
+![Screenshot (254)](https://user-images.githubusercontent.com/129657174/231693734-0d0f4288-80f8-4ecc-a9e6-feac8fcd21e7.png)
+
+In the index.php file, change the localhost to 'mysql clusterip' and root user, password,mysql database name
+```
+vim index.php
+```
+![Screenshot (250)](https://user-images.githubusercontent.com/129657174/231694299-6b2b6192-f8bb-4376-b9bd-816e9e4e180f.png)
+
+![Screenshot (252)](https://user-images.githubusercontent.com/129657174/231694310-4f8c3c06-3042-4bd4-8ef1-f862dbdc85ae.png)
+
+![Screenshot (253)](https://user-images.githubusercontent.com/129657174/231694330-60cf4200-a121-4082-b573-47b447aa921a.png)
 
 Build the docker file
 
 ```shell
 docker build -t iamsaikishore/phptodoapp:v1 .
 ```
+![Screenshot (255)](https://user-images.githubusercontent.com/129657174/231716273-b193bc1d-c52b-406c-97de-53cb5491a2e8.png)
 
 Push the image to docker hub
 
@@ -309,7 +378,7 @@ Create a Docker Hub Account
 docker login
 ```
 
-Give the docker hub username and password
+Give the docker hub username and password, and push the image to docker hub.
 
 ```shell
 docker push iamsaikishore/phptodoapp:v1
@@ -318,20 +387,33 @@ docker push iamsaikishore/phptodoapp:v1
 Now create the PHP Pod and expose it using NodePort service
  
 ```shell
-   kubectl run php-app --image=iamsaikishore/phptodoapp:v1
-   kubectl expose pod php-app --type=NodePort --port=8088 --target-port=80 --name=phpapp-svc
-   kubectl get all
+kubectl run php-app --image=iamsaikishore/phptodoapp:v1
+kubectl expose pod php-app --type=NodePort --port=8088 --target-port=80 --name=phpapp-svc
+kubectl get all
 ```
 
-To access the application public ip of master and node port
+To access the application public ip of master and node port of phpapp-svc
+
+![Screenshot (257)](https://user-images.githubusercontent.com/129657174/231716328-e7490361-01e5-4edb-aff5-a7fb9dc2c93e.png)
 
 Now try to add, update, delete and mark complete the tasks and play around
 
+![Screenshot (258)](https://user-images.githubusercontent.com/129657174/231716418-a5606e0f-7808-4c73-aceb-06f1328d739c.png)
+
+![Screenshot (259)](https://user-images.githubusercontent.com/129657174/231716437-210fcfb8-f5b5-4df2-a749-e79d2ba2c083.png)
+
+![Screenshot (260)](https://user-images.githubusercontent.com/129657174/231716462-8c8639f7-f2b3-44ad-b8c8-ed23d482e930.png)
 
 
+### Hurrayyyyyyyyy! We have deployed the application successfully.
 
+**Hope you all are Enjoyed**
 
+For the original Project details click the below links.
 
+[GitHub Repo](https://github.com/vikash-kumar01/3tier_todo_app.git)
+
+[Youtube](https://www.youtube.com/watch?v=-lHKvZ2qYMM&t=1s)
 
 
 

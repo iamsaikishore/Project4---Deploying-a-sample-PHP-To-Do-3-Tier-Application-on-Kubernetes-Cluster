@@ -409,6 +409,8 @@ Now try to add, update, delete and mark complete the tasks and play around
 
 **Hope you all are Enjoyed**
 
+[My Blog](https://iamsaikishore.hashnode.dev/deploying-a-sample-php-to-do-3-tier-application-on-kubernetes-cluster)
+
 For the original Project details click the below links.
 
 [GitHub Repo](https://github.com/vikash-kumar01/3tier_todo_app.git)

@@ -131,6 +131,10 @@ sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 ```
 ```shell
+sudo systemctl enable kubelet
+sudo systemctl start kubelet
+```
+```shell
 sudo swapoff -a
 ```
 ```vim /etc/fstab``` comment the /swap.img
@@ -178,6 +182,7 @@ execute this on the master node
 
 ```shell
 sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+sudo chmod 777 /etc/kubernetes/admin.conf
 kubectl get nodes
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 #once the kube-flannel pods are up then the nodes will be ready
